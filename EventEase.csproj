@@ -1,0 +1,27 @@
+<!-- PURPOSE: Project configuration file - defines .NET version, packages, and build settings -->
+<!-- LOCATION: Root of EventEase project folder -->
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <!-- Targets .NET 9.0 framework -->
+    <TargetFramework>net9.0</TargetFramework>
+    <!-- Enables nullable reference types for better null safety -->
+    <Nullable>enable</Nullable>
+    <!-- Enables implicit usings for common namespaces -->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Sets the root namespace for the project -->
+    <RootNamespace>EventEase</RootNamespace>
+    <!-- Sets the assembly name -->
+    <AssemblyName>EventEase</AssemblyName>
+    <!-- Produces an executable output -->
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Blazor WebAssembly runtime package -->
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.7" />
+    <!-- Development server for hot reload and debugging -->
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.7" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

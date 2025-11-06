@@ -1,0 +1,30 @@
+/* PURPOSE: Component-scoped CSS for EventCard styling */
+/* LOCATION: Components folder (same location as EventCard.razor) */
+
+/* Card hover effects for better user experience */
+.event-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border: 1px solid #e0e0e0;
+}
+
+.event-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Icon styling in event details */
+.event-details i {
+    color: #6c757d;
+    width: 16px;
+}
+
+/* Card title styling */
+.card-title {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+/* Progress bar background */
+.progress {
+    background-color: #f8f9fa;
+}

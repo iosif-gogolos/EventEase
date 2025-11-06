@@ -1,0 +1,201 @@
+@using EventEase.Models
+
+@if (Event == null)
+{
+    <!-- Fallback UI when event data is unavailable -->
+    <div class="card h-100 shadow-sm event-card">
+        <div class="card-body d-flex justify-content-center align-items-center">
+            <div class="text-muted">
+                <i class="bi bi-exclamation-triangle"></i>
+                <span class="ms-2">Event data unavailable</span>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Main event card UI -->
+    <div class="card h-100 shadow-sm event-card">
+        <div class="card-body">
+            <!-- Event title -->
+            <h5 class="card-title">@GetEventName()</h5>
+            <!-- Truncated description -->
+            <p class="card-text text-muted">@GetTruncatedDescription()</p>
+            
+            <!-- Event metadata (date, time, location) -->
+            <div class="event-details mb-3">
+                <div class="mb-2">
+                    <i class="bi bi-calendar3"></i>
+                    <span class="ms-2">@GetFormattedDate()</span>
+                </div>
+                <div class="mb-2">
+                    <i class="bi bi-clock"></i>
+                    <span class="ms-2">@GetFormattedTime()</span>
+                </div>
+                <div class="mb-2">
+                    <i class="bi bi-geo-alt"></i>
+                    <span class="ms-2">@GetLocation()</span>
+                </div>
+            </div>
+
+            <!-- Category badge and price -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="badge bg-primary">@GetCategory()</span>
+                <span class="fw-bold text-success">@GetFormattedPrice()</span>
+            </div>
+
+            <!-- Attendance progress bar -->
+            <div class="progress mb-2" style="height: 6px;">
+                <div class="progress-bar @GetProgressBarColor()" 
+                     role="progressbar" 
+                     style="width: @GetAttendancePercentage()%"
+                     aria-valuenow="@Event.CurrentAttendees" 
+                     aria-valuemin="0" 
+                     aria-valuemax="@Event.MaxAttendees">
+                </div>
+            </div>
+            <small class="text-muted">@GetAttendanceText()</small>
+        </div>
+        
+        <!-- Card footer with action buttons -->
+        <div class="card-footer bg-transparent">
+            <div class="d-grid gap-2">
+                <!-- View details button (always shown) -->
+                <a href="/events/@Event.Id" class="btn btn-outline-primary">View Details</a>
+                
+                <!-- Conditional registration button based on event status -->
+                @if (ShowRegisterButton)
+                {
+                    @if (IsEventFull())
+                    {
+                        <button class="btn btn-secondary" disabled>Event Full</button>
+                    }
+                    else if (IsEventExpired())
+                    {
+                        <button class="btn btn-warning" disabled>Event Ended</button>
+                    }
+                    else
+                    {
+                        <a href="/register/@Event.Id" class="btn btn-primary">Register Now</a>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // Component parameters (inputs from parent component)
+    [Parameter] public Event? Event { get; set; }
+    [Parameter] public bool ShowRegisterButton { get; set; } = true;
+    [Parameter] public int MaxDescriptionLength { get; set; } = 100;
+
+    // Safe property accessors with fallback values
+    private string GetEventName()
+    {
+        return !string.IsNullOrWhiteSpace(Event?.Name) ? Event.Name : "Untitled Event";
+    }
+
+    private string GetTruncatedDescription()
+    {
+        if (Event == null || string.IsNullOrWhiteSpace(Event.Description))
+            return "No description available.";
+            
+        return Event.Description.Length <= MaxDescriptionLength 
+            ? Event.Description 
+            : Event.Description.Substring(0, MaxDescriptionLength) + "...";
+    }
+
+    private string GetFormattedDate()
+    {
+        if (Event == null) return "Date TBD";
+        
+        try
+        {
+            return Event.Date.ToString("MMM dd, yyyy");
+        }
+        catch
+        {
+            return "Date TBD";
+        }
+    }
+
+    private string GetFormattedTime()
+    {
+        if (Event == null) return "Time TBD";
+        
+        try
+        {
+            return Event.Date.ToString("h:mm tt");
+        }
+        catch
+        {
+            return "Time TBD";
+        }
+    }
+
+    private string GetLocation()
+    {
+        return !string.IsNullOrWhiteSpace(Event?.Location) ? Event.Location : "Location TBD";
+    }
+
+    private string GetCategory()
+    {
+        return !string.IsNullOrWhiteSpace(Event?.Category) ? Event.Category : "General";
+    }
+
+    private string GetFormattedPrice()
+    {
+        if (Event == null) return "$0.00";
+        
+        try
+        {
+            return Event.Price <= 0 ? "Free" : $"${Event.Price:F2}";
+        }
+        catch
+        {
+            return "$0.00";
+        }
+    }
+
+    // Calculates attendance percentage for progress bar
+    private double GetAttendancePercentage()
+    {
+        if (Event == null || Event.MaxAttendees <= 0) return 0;
+        
+        var percentage = ((double)Math.Max(0, Event.CurrentAttendees) / Event.MaxAttendees) * 100;
+        return Math.Min(100, Math.Max(0, percentage));
+    }
+
+    // Returns color class based on attendance level
+    private string GetProgressBarColor()
+    {
+        var percentage = GetAttendancePercentage();
+        return percentage switch
+        {
+            >= 90 => "bg-danger",    // Red for nearly full
+            >= 70 => "bg-warning",   // Yellow for getting full
+            _ => "bg-success"        // Green for plenty of space
+        };
+    }
+
+    private string GetAttendanceText()
+    {
+        if (Event == null) return "0 / 0 attendees";
+        
+        var current = Math.Max(0, Event.CurrentAttendees);
+        var max = Math.Max(0, Event.MaxAttendees);
+        return $"{current} / {max} attendees";
+    }
+
+    // Helper methods to check event status
+    private bool IsEventFull()
+    {
+        return Event != null && Event.CurrentAttendees >= Event.MaxAttendees;
+    }
+
+    private bool IsEventExpired()
+    {
+        return Event != null && Event.Date < DateTime.Now;
+    }
+}

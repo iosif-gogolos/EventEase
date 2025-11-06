@@ -1,0 +1,417 @@
+@page "/events/{id:int}"
+@using EventEase.Models
+@using EventEase.Services
+@inject IJSRuntime JSRuntime
+@inject IEventService EventService
+@inject NavigationManager Navigation
+
+<PageTitle>@(currentEvent?.Name ?? "Event Details") - EventEase</PageTitle>
+
+@if (hasError)
+{
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 text-center">
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle display-4 text-danger mb-3"></i>
+                    <h3>Error Loading Event</h3>
+                    <p class="text-muted mb-4">We encountered an error while trying to load this event.</p>
+                    <div class="d-flex gap-3 justify-content-center">
+                        <button class="btn btn-danger" @onclick="RetryLoad">
+                            <i class="bi bi-arrow-clockwise me-1"></i>
+                            Try Again
+                        </button>
+                        <a href="/events" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>
+                            Back to Events
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else if (currentEvent == null)
+{
+    @if (isLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center" style="min-height: 60vh;">
+            <div class="text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading event details...</span>
+                </div>
+                <p class="text-muted">Loading event details...</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8 text-center">
+                    <i class="bi bi-calendar-x display-1 text-warning mb-3"></i>
+                    <h2>Event Not Found</h2>
+                    <p class="text-muted mb-4">The event with ID @Id doesn't exist or may have been removed.</p>
+                    <div class="d-flex gap-3 justify-content-center">
+                        <a href="/events" class="btn btn-primary">Browse All Events</a>
+                        <a href="/" class="btn btn-outline-secondary">Go Home</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="container">
+        <!-- Breadcrumb Navigation -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="/events">Events</a></li>
+                <li class="breadcrumb-item active" aria-current="page">@GetEventName()</li>
+            </ol>
+        </nav>
+
+        <div class="row">
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h1 class="card-title h2 mb-0">@GetEventName()</h1>
+                            <span class="badge bg-primary fs-6">@GetCategory()</span>
+                        </div>
+
+                        <!-- Event Meta Information -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-calendar-event text-primary me-2"></i>
+                                    <div>
+                                        <strong>Date:</strong>
+                                        <span class="ms-1">@GetFormattedDate()</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-clock text-primary me-2"></i>
+                                    <div>
+                                        <strong>Time:</strong>
+                                        <span class="ms-1">@GetFormattedTime()</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-geo-alt text-primary me-2"></i>
+                                    <div>
+                                        <strong>Location:</strong>
+                                        <span class="ms-1">@GetLocation()</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-currency-dollar text-primary me-2"></i>
+                                    <div>
+                                        <strong>Price:</strong>
+                                        <span class="ms-1 text-success fw-bold">@GetFormattedPrice()</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-4">
+                            <h3 class="h4">About This Event</h3>
+                            <p class="text-muted">@GetDescription()</p>
+                        </div>
+
+                        <!-- Attendance Information -->
+                        <div class="mb-4">
+                            <h4 class="h5">Attendance</h4>
+                            <div class="progress mb-2" style="height: 10px;">
+                                <div class="progress-bar @GetProgressBarClass()" 
+                                     role="progressbar" 
+                                     style="width: @GetAttendancePercentage()%"
+                                     aria-valuenow="@GetCurrentAttendees()" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="@GetMaxAttendees()">
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>
+                                    <strong>@GetCurrentAttendees()</strong> registered
+                                </span>
+                                <span>
+                                    <strong>@GetSpotsRemaining()</strong> spots remaining
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Registration Card -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body text-center">
+                        <h3 class="text-primary mb-3">@GetFormattedPrice()</h3>
+                        
+                        @if (IsEventExpired())
+                        {
+                            <div class="alert alert-warning">
+                                <i class="bi bi-clock-history me-2"></i>
+                                <strong>Event Ended</strong>
+                            </div>
+                        }
+                        else if (IsEventFull())
+                        {
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                <strong>Event Full</strong>
+                            </div>
+                            <button class="btn btn-secondary w-100 mb-3" disabled>
+                                <i class="bi bi-x-circle me-2"></i>Registration Closed
+                            </button>
+                        }
+                        else
+                        {
+                            <div class="alert alert-success">
+                                <i class="bi bi-check-circle me-2"></i>
+                                <strong>@GetSpotsRemaining()</strong> spots available
+                            </div>
+                            <a href="/register/@currentEvent.Id" class="btn btn-primary w-100 mb-3">
+                                <i class="bi bi-calendar-plus me-2"></i>Register Now
+                            </a>
+                        }
+                        
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-secondary" @onclick="ShareEvent">
+                                <i class="bi bi-share me-2"></i>Share Event
+                            </button>
+                            <button class="btn btn-outline-info" @onclick="AddToCalendar">
+                                <i class="bi bi-calendar2-plus me-2"></i>Add to Calendar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Event Information Card -->
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Event Details</h5>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <strong>Event ID:</strong> #@currentEvent.Id.ToString("D4")
+                            </li>
+                            <li class="mb-2">
+                                <strong>Category:</strong> @GetCategory()
+                            </li>
+                            <li class="mb-2">
+                                <strong>Capacity:</strong> @GetMaxAttendees() people
+                            </li>
+                            <li class="mb-2">
+                                <strong>Status:</strong>
+                                @if (currentEvent.IsActive)
+                                {
+                                    @if (IsEventExpired())
+                                    {
+                                        <span class="badge bg-warning ms-1">Ended</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success ms-1">Active</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary ms-1">Inactive</span>
+                                }
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Event? currentEvent;
+    private bool isLoading = true;
+    private bool hasError = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEventAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadEventAsync();
+    }
+
+    private async Task LoadEventAsync()
+    {
+        isLoading = true;
+        hasError = false;
+        
+        try
+        {
+            currentEvent = await EventService.GetEventByIdAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading event: {ex.Message}");
+            hasError = true;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RetryLoad()
+    {
+        await LoadEventAsync();
+    }
+
+    private async Task ShareEvent()
+    {
+        if (currentEvent == null) return;
+
+        try
+        {
+            var url = Navigation.Uri;
+            var eventName = GetEventName().Replace("'", "\\'");
+            var shareText = $"Check out this event: {eventName} on {GetFormattedDate()}";
+            
+            // Try using Web Share API (works on mobile and some browsers)
+            await JSRuntime.InvokeVoidAsync("eval", 
+                $@"if (navigator.share) {{
+                    navigator.share({{
+                        title: '{eventName}',
+                        text: '{shareText}',
+                        url: '{url}'
+                    }}).catch(err => console.log('Share failed:', err));
+                }} else {{
+                    navigator.clipboard.writeText('{url}').then(() => {{
+                        alert('Event link copied to clipboard!');
+                    }}).catch(err => {{
+                        console.log('Copy failed:', err);
+                        alert('Unable to share. URL: {url}');
+                    }});
+                }}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Share error: {ex.Message}");
+        }
+    }
+
+    private async Task AddToCalendar()
+    {
+        if (currentEvent == null) return;
+
+        try
+        {
+            var startDate = currentEvent.Date.ToUniversalTime().ToString("yyyyMMddTHHmmssZ");
+            var endDate = currentEvent.Date.AddHours(2).ToUniversalTime().ToString("yyyyMMddTHHmmssZ");
+            var eventName = GetEventName().Replace("\n", "\\n").Replace("\r", "");
+            var description = GetDescription().Replace("\n", "\\n").Replace("\r", "");
+            var location = GetLocation().Replace("\n", "\\n").Replace("\r", "");
+            
+            var icsContent = $@"BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//EventEase//Event Calendar//EN
+BEGIN:VEVENT
+UID:{currentEvent.Id}@eventease.com
+DTSTAMP:{DateTime.UtcNow:yyyyMMddTHHmmssZ}
+DTSTART:{startDate}
+DTEND:{endDate}
+SUMMARY:{eventName}
+DESCRIPTION:{description}
+LOCATION:{location}
+STATUS:CONFIRMED
+END:VEVENT
+END:VCALENDAR";
+
+            var fileName = $"event-{currentEvent.Id}.ics";
+            var escapedContent = icsContent.Replace("`", "\\`").Replace("$", "\\$");
+            
+            await JSRuntime.InvokeVoidAsync("eval", 
+                $@"const blob = new Blob([`{escapedContent}`], {{ type: 'text/calendar' }});
+                   const url = URL.createObjectURL(blob);
+                   const a = document.createElement('a');
+                   a.href = url;
+                   a.download = '{fileName}';
+                   a.click();
+                   URL.revokeObjectURL(url);");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Calendar export error: {ex.Message}");
+        }
+    }
+
+    // Safe property accessors
+    private string GetEventName() => !string.IsNullOrWhiteSpace(currentEvent?.Name) ? currentEvent.Name : "Untitled Event";
+    private string GetCategory() => !string.IsNullOrWhiteSpace(currentEvent?.Category) ? currentEvent.Category : "General";
+    private string GetLocation() => !string.IsNullOrWhiteSpace(currentEvent?.Location) ? currentEvent.Location : "Location TBD";
+    private string GetDescription() => !string.IsNullOrWhiteSpace(currentEvent?.Description) ? currentEvent.Description : "No description available.";
+    
+    private string GetFormattedDate()
+    {
+        if (currentEvent == null) return "Date TBD";
+        try { return currentEvent.Date.ToString("MMMM dd, yyyy"); }
+        catch { return "Date TBD"; }
+    }
+
+    private string GetFormattedTime()
+    {
+        if (currentEvent == null) return "Time TBD";
+        try { return currentEvent.Date.ToString("h:mm tt"); }
+        catch { return "Time TBD"; }
+    }
+
+    private string GetFormattedPrice()
+    {
+        if (currentEvent == null) return "$0.00";
+        try { return currentEvent.Price <= 0 ? "Free" : $"${currentEvent.Price:F2}"; }
+        catch { return "$0.00"; }
+    }
+
+    private int GetCurrentAttendees() => Math.Max(0, currentEvent?.CurrentAttendees ?? 0);
+    private int GetMaxAttendees() => Math.Max(0, currentEvent?.MaxAttendees ?? 0);
+    private int GetSpotsRemaining() => Math.Max(0, GetMaxAttendees() - GetCurrentAttendees());
+
+    private double GetAttendancePercentage()
+    {
+        var max = GetMaxAttendees();
+        if (max <= 0) return 0;
+        return Math.Min(100, Math.Max(0, ((double)GetCurrentAttendees() / max) * 100));
+    }
+
+    private string GetProgressBarClass()
+    {
+        var percentage = GetAttendancePercentage();
+        return percentage switch
+        {
+            >= 90 => "bg-danger",
+            >= 70 => "bg-warning",
+            _ => "bg-success"
+        };
+    }
+
+    private bool IsEventFull() => GetCurrentAttendees() >= GetMaxAttendees();
+    
+    private bool IsEventExpired()
+    {
+        if (currentEvent == null) return false;
+        try { return currentEvent.Date < DateTime.Now; }
+        catch { return false; }
+    }
+}

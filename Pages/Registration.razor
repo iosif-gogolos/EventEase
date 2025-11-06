@@ -1,0 +1,313 @@
+@page "/register/{id:int}"
+@using EventEase.Models
+@using EventEase.Services
+@using System.ComponentModel.DataAnnotations
+@inject IEventService EventService
+@inject NavigationManager Navigation
+
+<PageTitle>Register - @(currentEvent?.Name ?? "Event") - EventEase</PageTitle>
+
+<div class="container">
+    @if (hasError)
+    {
+        <div class="alert alert-danger">
+            <h4>Registration Error</h4>
+            <p>We encountered an error while loading the registration page. Please try again.</p>
+            <button class="btn btn-outline-danger" @onclick="RetryLoad">
+                <i class="bi bi-arrow-clockwise me-1"></i>
+                Try Again
+            </button>
+        </div>
+    }
+    else if (currentEvent == null)
+    {
+        @if (isLoading)
+        {
+            <div class="d-flex justify-content-center align-items-center" style="min-height: 50vh;">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="text-muted mt-2">Loading event details...</p>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-warning">
+                <h4>Event Not Found</h4>
+                <p>The event you're trying to register for doesn't exist.</p>
+                <a href="/events" class="btn btn-primary">Back to Events</a>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h1 class="card-title h3 mb-4">Register for Event</h1>
+                        
+                        <!-- Event Summary -->
+                        <div class="alert alert-info mb-4">
+                            <h5 class="alert-heading">@GetEventName()</h5>
+                            <p class="mb-2">
+                                <i class="bi bi-calendar me-1"></i>
+                                @GetFormattedDateTime()
+                            </p>
+                            <p class="mb-2">
+                                <i class="bi bi-geo-alt me-1"></i>
+                                @GetLocation()
+                            </p>
+                            <p class="mb-0">
+                                <i class="bi bi-currency-dollar me-1"></i>
+                                <strong>@GetFormattedPrice()</strong>
+                            </p>
+                        </div>
+
+                        @if (registrationComplete)
+                        {
+                            <div class="alert alert-success">
+                                <h4 class="alert-heading">
+                                    <i class="bi bi-check-circle me-2"></i>
+                                    Registration Successful!
+                                </h4>
+                                <p>Thank you for registering! You should receive a confirmation email shortly.</p>
+                                <hr>
+                                <div class="d-flex gap-2">
+                                    <a href="/events/@Id" class="btn btn-outline-success">
+                                        <i class="bi bi-arrow-left me-1"></i>
+                                        Back to Event
+                                    </a>
+                                    <a href="/events" class="btn btn-primary">
+                                        <i class="bi bi-calendar-event me-1"></i>
+                                        Browse More Events
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                        else if (IsEventExpired())
+                        {
+                            <div class="alert alert-warning">
+                                <h5>Registration Unavailable</h5>
+                                <p>This event has already occurred. Registration is no longer available.</p>
+                            </div>
+                        }
+                        else if (IsEventFull())
+                        {
+                            <div class="alert alert-danger">
+                                <h5>Registration Unavailable</h5>
+                                <p>This event is currently full. Please check back later for cancellations.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- Registration Form -->
+                            <EditForm Model="@registrationModel" OnValidSubmit="@HandleRegistration">
+                                <DataAnnotationsValidator />
+                                
+                                @if (registrationError != null)
+                                {
+                                    <div class="alert alert-danger">
+                                        <i class="bi bi-exclamation-triangle me-2"></i>
+                                        @registrationError
+                                    </div>
+                                }
+
+                                <ValidationSummary class="alert alert-danger" />
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="firstName" class="form-label">First Name *</label>
+                                        <InputText id="firstName" class="form-control" @bind-Value="registrationModel.FirstName" />
+                                        <ValidationMessage For="@(() => registrationModel.FirstName)" />
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="lastName" class="form-label">Last Name *</label>
+                                        <InputText id="lastName" class="form-control" @bind-Value="registrationModel.LastName" />
+                                        <ValidationMessage For="@(() => registrationModel.LastName)" />
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email Address *</label>
+                                    <InputText id="email" type="email" class="form-control" @bind-Value="registrationModel.Email" />
+                                    <ValidationMessage For="@(() => registrationModel.Email)" />
+                                    <div class="form-text">We'll use this email to send you event updates and confirmations.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="phone" class="form-label">Phone Number</label>
+                                    <InputText id="phone" type="tel" class="form-control" @bind-Value="registrationModel.Phone" />
+                                    <ValidationMessage For="@(() => registrationModel.Phone)" />
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="specialRequests" class="form-label">Special Requests or Dietary Restrictions</label>
+                                    <InputTextArea id="specialRequests" class="form-control" rows="3" @bind-Value="registrationModel.SpecialRequests" />
+                                </div>
+
+                                <div class="form-check mb-4">
+                                    <InputCheckbox id="agreeToTerms" class="form-check-input" @bind-Value="registrationModel.AgreeToTerms" />
+                                    <label class="form-check-label" for="agreeToTerms">
+                                        I agree to the <a href="#" target="_blank">terms and conditions</a> *
+                                    </label>
+                                    <ValidationMessage For="@(() => registrationModel.AgreeToTerms)" />
+                                </div>
+
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <a href="/events/@Id" class="btn btn-outline-secondary me-md-2">
+                                        <i class="bi bi-arrow-left me-1"></i>Back to Event
+                                    </a>
+                                    <button type="submit" class="btn btn-primary" disabled="@isRegistering">
+                                        @if (isRegistering)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                            <span>Registering...</span>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-check-circle me-1"></i>
+                                            <span>Complete Registration</span>
+                                        }
+                                    </button>
+                                </div>
+                            </EditForm>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Event? currentEvent;
+    private RegistrationModel registrationModel = new();
+    private bool isLoading = true;
+    private bool hasError = false;
+    private bool isRegistering = false;
+    private bool registrationComplete = false;
+    private string? registrationError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEventAsync();
+    }
+
+    private async Task LoadEventAsync()
+    {
+        isLoading = true;
+        hasError = false;
+        
+        try
+        {
+            currentEvent = await EventService.GetEventByIdAsync(Id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading event: {ex.Message}");
+            hasError = true;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RetryLoad()
+    {
+        await LoadEventAsync();
+    }
+
+    private async Task HandleRegistration()
+    {
+        if (currentEvent == null) return;
+        
+        isRegistering = true;
+        registrationError = null;
+        
+        try
+        {
+            var success = await EventService.RegisterForEventAsync(Id, registrationModel.Email);
+            
+            if (success)
+            {
+                registrationComplete = true;
+            }
+            else
+            {
+                registrationError = "Registration failed. The event may be full or no longer accepting registrations.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Registration error: {ex.Message}");
+            registrationError = "An error occurred during registration. Please try again.";
+        }
+        finally
+        {
+            isRegistering = false;
+            StateHasChanged();
+        }
+    }
+
+    // Safe property accessors
+    private string GetEventName() => !string.IsNullOrWhiteSpace(currentEvent?.Name) ? currentEvent.Name : "Event";
+    private string GetLocation() => !string.IsNullOrWhiteSpace(currentEvent?.Location) ? currentEvent.Location : "Location TBD";
+    
+    private string GetFormattedDateTime()
+    {
+        if (currentEvent == null) return "Date and time TBD";
+        try { return currentEvent.Date.ToString("MMMM dd, yyyy 'at' h:mm tt"); }
+        catch { return "Date and time TBD"; }
+    }
+
+    private string GetFormattedPrice()
+    {
+        if (currentEvent == null) return "$0.00";
+        try { return currentEvent.Price <= 0 ? "Free" : $"${currentEvent.Price:F2}"; }
+        catch { return "$0.00"; }
+    }
+
+    private bool IsEventFull()
+    {
+        return currentEvent != null && currentEvent.CurrentAttendees >= currentEvent.MaxAttendees;
+    }
+
+    private bool IsEventExpired()
+    {
+        if (currentEvent == null) return false;
+        try { return currentEvent.Date < DateTime.Now; }
+        catch { return false; }
+    }
+
+    public class RegistrationModel
+    {
+        [Required(ErrorMessage = "First name is required")]
+        [StringLength(50, ErrorMessage = "First name cannot exceed 50 characters")]
+        public string FirstName { get; set; } = string.Empty;
+        
+        [Required(ErrorMessage = "Last name is required")]
+        [StringLength(50, ErrorMessage = "Last name cannot exceed 50 characters")]
+        public string LastName { get; set; } = string.Empty;
+        
+        [Required(ErrorMessage = "Email address is required")]
+        [EmailAddress(ErrorMessage = "Please enter a valid email address")]
+        [StringLength(100, ErrorMessage = "Email address cannot exceed 100 characters")]
+        public string Email { get; set; } = string.Empty;
+        
+        [Phone(ErrorMessage = "Please enter a valid phone number")]
+        public string Phone { get; set; } = string.Empty;
+        
+        [StringLength(500, ErrorMessage = "Special requests cannot exceed 500 characters")]
+        public string SpecialRequests { get; set; } = string.Empty;
+        
+        [Range(typeof(bool), "true", "true", ErrorMessage = "You must agree to the terms and conditions")]
+        public bool AgreeToTerms { get; set; }
+    }
+}

@@ -1,0 +1,265 @@
+﻿@page "/events"
+@using EventEase.Models
+@using EventEase.Services
+@implements IDisposable
+@inject IEventService EventService
+@inject NavigationManager Navigation
+
+<PageTitle>All Events - EventEase</PageTitle>
+
+<div class="container">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5 fw-bold">All Events</h1>
+            <p class="text-muted">Discover your next great experience</p>
+        </div>
+    </div>
+
+    <!-- Search and Filter Controls -->
+    <div class="row mb-4">
+        <div class="col-lg-8 col-md-6 mb-3">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" 
+                       class="form-control" 
+                       placeholder="Search events by name, description, or location..." 
+                       @bind="searchTerm" 
+                       @oninput="OnSearchChanged" />
+                @if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    <button class="btn btn-outline-secondary" type="button" @onclick="ClearSearch">
+                        <i class="bi bi-x"></i>
+                    </button>
+                }
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 mb-3">
+            <select class="form-select" @bind="SelectedCategory">
+                <option value="">All Categories</option>
+                @if (allCategories != null)
+                {
+                    @foreach (var category in allCategories)
+                    {
+                        <option value="@category">@category</option>
+                    }
+                }
+            </select>
+        </div>
+    </div>
+
+    <!-- Results Summary -->
+    @if (filteredEvents != null && !hasError)
+    {
+        <div class="row mb-3">
+            <div class="col-12">
+                <small class="text-muted">
+                    Showing @filteredEvents.Count of @(allEvents?.Count ?? 0) events
+                    @if (!string.IsNullOrEmpty(searchTerm) || !string.IsNullOrEmpty(SelectedCategory))
+                    {
+                        <span> | </span>
+                        @if (!string.IsNullOrEmpty(searchTerm))
+                        {
+                            <span>Search: "@searchTerm"</span>
+                        }
+                        @if (!string.IsNullOrEmpty(SelectedCategory))
+                        {
+                            <span>Category: @SelectedCategory</span>
+                        }
+                        <button class="btn btn-link btn-sm p-0 ms-2" @onclick="ClearAllFilters">
+                            Clear filters
+                        </button>
+                    }
+                </small>
+            </div>
+        </div>
+    }
+
+    <!-- Error State -->
+    @if (hasError)
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Unable to Load Events
+            </h4>
+            <p>We're having trouble loading the events. This could be due to a network issue or server problem.</p>
+            <hr>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-danger" @onclick="RetryLoad">
+                    <i class="bi bi-arrow-clockwise me-1"></i>
+                    Try Again
+                </button>
+                <a href="/" class="btn btn-outline-secondary">
+                    <i class="bi bi-house me-1"></i>
+                    Go Home
+                </a>
+            </div>
+        </div>
+    }
+    else if (isLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
+            <div class="text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Loading events...</span>
+                </div>
+                <p class="text-muted">Loading events...</p>
+            </div>
+        </div>
+    }
+    else if (filteredEvents == null || !filteredEvents.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-calendar-x display-1 text-muted mb-3"></i>
+            <h3>No events found</h3>
+            <p class="text-muted">
+                @if (!string.IsNullOrEmpty(searchTerm) || !string.IsNullOrEmpty(SelectedCategory))
+                {
+                    <span>Try adjusting your search criteria or </span>
+                    <button class="btn btn-link p-0" @onclick="ClearAllFilters">clear all filters</button>
+                }
+                else
+                {
+                    <span>Check back soon for new exciting events!</span>
+                }
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var eventItem in filteredEvents)
+            {
+                <div class="col-xl-4 col-lg-6 col-md-6">
+                    <EventCard Event="@eventItem" ShowRegisterButton="true" />
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<Event>? allEvents;
+    private List<Event>? filteredEvents;
+    private List<string>? allCategories;
+
+    private string searchTerm = string.Empty;
+
+    private string _selectedCategory = string.Empty;
+    private string SelectedCategory
+    {
+        get => _selectedCategory;
+        set
+        {
+            _selectedCategory = value ?? string.Empty;
+            ApplyFilters();
+        }
+    }
+
+    private bool isLoading = true;
+    private bool hasError = false;
+    private CancellationTokenSource? _cancellationTokenSource;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEventsAsync();
+    }
+
+    private async Task LoadEventsAsync()
+    {
+        _cancellationTokenSource?.Cancel();
+        _cancellationTokenSource?.Dispose();
+        _cancellationTokenSource = new CancellationTokenSource();
+        
+        isLoading = true;
+        hasError = false;
+        
+        try
+        {
+            var eventsTask = EventService.GetEventsAsync();
+            var categoriesTask = EventService.GetCategoriesAsync();
+            
+            await Task.WhenAll(eventsTask, categoriesTask);
+            
+            allEvents = await eventsTask;
+            allCategories = await categoriesTask;
+            filteredEvents = allEvents;
+            
+            ApplyFilters();
+        }
+        catch (OperationCanceledException)
+        {
+            // Ignore cancellation
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading events: {ex.Message}");
+            hasError = true;
+            allEvents = new List<Event>();
+            filteredEvents = new List<Event>();
+            allCategories = new List<string>();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RetryLoad()
+    {
+        await LoadEventsAsync();
+    }
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+        ApplyFilters();
+    }
+
+    private void ApplyFilters()
+    {
+        if (allEvents == null) return;
+
+        try
+        {
+            filteredEvents = allEvents.Where(e =>
+                (string.IsNullOrEmpty(searchTerm) ||
+                 (!string.IsNullOrEmpty(e.Name) && e.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                 (!string.IsNullOrEmpty(e.Description) && e.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
+                 (!string.IsNullOrEmpty(e.Location) && e.Location.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))) &&
+                (string.IsNullOrEmpty(SelectedCategory) ||
+                 (!string.IsNullOrEmpty(e.Category) && e.Category.Equals(SelectedCategory, StringComparison.OrdinalIgnoreCase)))
+            ).ToList();
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error applying filters: {ex.Message}");
+            filteredEvents = allEvents;
+        }
+    }
+
+    private void ClearSearch()
+    {
+        searchTerm = string.Empty;
+        ApplyFilters();
+    }
+
+    private void ClearAllFilters()
+    {
+        searchTerm = string.Empty;
+        SelectedCategory = string.Empty;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        _cancellationTokenSource?.Cancel();
+        _cancellationTokenSource?.Dispose();
+    }
+}
