@@ -1,6 +1,9 @@
 # EventEase: .NET / Blazor Project
+![EventEase Screenshot](assets/EventEase.png)
+
 ## Kurzbeschreibung
 EventEase ist eine .NET / Blazor-Anwendung zum Verwalten und Anzeigen von Events. Dieses README beschreibt, wie das Repository geklont und lokal gestartet wird.
+
 
 ## Voraussetzungen
 - Git (zum Klonen des Repositories)
