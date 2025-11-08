@@ -1762,11 +1762,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/iosifgogolos/dotnet-blazor-course-microsoft/EventEase/EventEase.csproj",
+      "projectUniqueName": "/Users/iosifgogolos/EventEase/EventEase.csproj",
       "projectName": "EventEase",
-      "projectPath": "/Users/iosifgogolos/dotnet-blazor-course-microsoft/EventEase/EventEase.csproj",
+      "projectPath": "/Users/iosifgogolos/EventEase/EventEase.csproj",
       "packagesPath": "/Users/iosifgogolos/.nuget/packages/",
-      "outputPath": "/Users/iosifgogolos/dotnet-blazor-course-microsoft/EventEase/obj/",
+      "outputPath": "/Users/iosifgogolos/EventEase/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/Users/iosifgogolos/.nuget/NuGet/NuGet.Config"

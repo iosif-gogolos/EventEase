@@ -13,53 +13,45 @@ build_property.EnforceExtendedAnalyzerRules =
 build_property._SupportedPlatformList = browser
 build_property.RootNamespace = EventEase
 build_property.RootNamespace = EventEase
-build_property.ProjectDir = /Users/iosifgogolos/dotnet-blazor-course-microsoft/EventEase/
+build_property.ProjectDir = /Users/iosifgogolos/EventEase/
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = false
 build_property.RazorLangVersion = 9.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = /Users/iosifgogolos/dotnet-blazor-course-microsoft/EventEase
+build_property.MSBuildProjectDirectory = /Users/iosifgogolos/EventEase
 build_property._RazorSourceGeneratorDebug = 
 build_property.EffectiveAnalysisLevelStyle = 9.0
 build_property.EnableCodeStyleSeverity = 
 
-[/Users/iosifgogolos/dotnet-blazor-course-microsoft/EventEase/App.razor]
+[/Users/iosifgogolos/EventEase/App.razor]
 build_metadata.AdditionalFiles.TargetPath = QXBwLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/iosifgogolos/dotnet-blazor-course-microsoft/EventEase/Pages/Counter.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXMvQ291bnRlci5yYXpvcg==
-build_metadata.AdditionalFiles.CssScope = 
-
-[/Users/iosifgogolos/dotnet-blazor-course-microsoft/EventEase/Pages/EventDetails.razor]
+[/Users/iosifgogolos/EventEase/Pages/EventDetails.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvRXZlbnREZXRhaWxzLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/iosifgogolos/dotnet-blazor-course-microsoft/EventEase/Pages/Home.razor]
+[/Users/iosifgogolos/EventEase/Pages/Home.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvSG9tZS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/iosifgogolos/dotnet-blazor-course-microsoft/EventEase/Pages/Registration.razor]
+[/Users/iosifgogolos/EventEase/Pages/Registration.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXMvUmVnaXN0cmF0aW9uLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/iosifgogolos/dotnet-blazor-course-microsoft/EventEase/Pages/Weather.razor]
-build_metadata.AdditionalFiles.TargetPath = UGFnZXMvV2VhdGhlci5yYXpvcg==
-build_metadata.AdditionalFiles.CssScope = 
-
-[/Users/iosifgogolos/dotnet-blazor-course-microsoft/EventEase/_Imports.razor]
+[/Users/iosifgogolos/EventEase/_Imports.razor]
 build_metadata.AdditionalFiles.TargetPath = X0ltcG9ydHMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/iosifgogolos/dotnet-blazor-course-microsoft/EventEase/Components/EventCard.razor]
+[/Users/iosifgogolos/EventEase/Components/EventCard.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9FdmVudENhcmQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-oodturojhu
 
-[/Users/iosifgogolos/dotnet-blazor-course-microsoft/EventEase/Layout/MainLayout.razor]
+[/Users/iosifgogolos/EventEase/Layout/MainLayout.razor]
 build_metadata.AdditionalFiles.TargetPath = TGF5b3V0L01haW5MYXlvdXQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-auiddlh7g4
 
-[/Users/iosifgogolos/dotnet-blazor-course-microsoft/EventEase/Layout/NavMenu.razor]
+[/Users/iosifgogolos/EventEase/Layout/NavMenu.razor]
 build_metadata.AdditionalFiles.TargetPath = TGF5b3V0L05hdk1lbnUucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-kwcrot24ae

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "4eQanNgAvgQ=",
+  "dgSpecHash": "rCWZlEzme5I=",
   "success": true,
-  "projectFilePath": "/Users/iosifgogolos/dotnet-blazor-course-microsoft/EventEase/EventEase.csproj",
+  "projectFilePath": "/Users/iosifgogolos/EventEase/EventEase.csproj",
   "expectedPackageFiles": [
     "/Users/iosifgogolos/.nuget/packages/microsoft.aspnetcore.authorization/9.0.7/microsoft.aspnetcore.authorization.9.0.7.nupkg.sha512",
     "/Users/iosifgogolos/.nuget/packages/microsoft.aspnetcore.components/9.0.7/microsoft.aspnetcore.components.9.0.7.nupkg.sha512",
